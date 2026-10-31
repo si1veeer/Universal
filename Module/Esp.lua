@@ -22,7 +22,6 @@ local OriginalLighting = {
     ClockTime = Lighting.ClockTime
 }
 
--- รวมการตั้งค่าทั้งหมด (Settings)
 ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
@@ -30,10 +29,10 @@ ESP.Settings = {
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
-    BoxType = "Box", -- "Box" หรือ "Corner"
+    BoxType = "Box",
     BoxColor = Color3.fromRGB(255, 255, 255),
     HealthBar = true,
-    HealthBarSide = "Left", -- "Left" หรือ "Right"
+    HealthBarSide = "Left",
     DynamicHealthColor = true,
     HealthBarColor = Color3.fromRGB(0, 255, 0),
     HealthText = false,
@@ -216,7 +215,6 @@ local function addPlayer(player)
             return
         end
 
-        -- Visible Check
         local currentTime = tick()
         if currentTime - pData.LastVisCheck > 0.2 then
             pData.LastVisCheck = currentTime
@@ -240,7 +238,6 @@ local function addPlayer(player)
             return
         end
 
-        -- Chams Logic
         if ESP.Settings.Chams then
             highlight.Adornee = character
             if ESP.Settings.ChamsVisibleCheck then
@@ -273,7 +270,6 @@ local function addPlayer(player)
 
         local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
 
-        -- Off-Screen Arrows
         if not onScreen then
             hideAll()
             if ESP.Settings.OffScreenArrows then
@@ -325,7 +321,6 @@ local function addPlayer(player)
         local boxX = rootPos.X - (boxWidth / 2)
         local boxY = topPos.Y
 
-        -- Box Rendering (Box / Corner)
         if ESP.Settings.Box then
             if ESP.Settings.BoxType == "Box" then
                 for _, line in pairs(pData.CornerLines) do line.Visible = false end
@@ -379,7 +374,6 @@ local function addPlayer(player)
             for _, line in pairs(pData.CornerLines) do line.Visible = false end
         end
 
-        -- HealthBar
         if ESP.Settings.HealthBar then
             local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
             local barHeight = boxHeight * healthPercent
@@ -408,7 +402,6 @@ local function addPlayer(player)
             pData.HealthTag.Visible = false
         end
 
-        -- Name Tag
         if ESP.Settings.Name then
             pData.NameTag.Text = player.Name
             pData.NameTag.Size = ESP.Settings.TextSize
@@ -419,7 +412,6 @@ local function addPlayer(player)
             pData.NameTag.Visible = false
         end
 
-        -- Distance Tag
         if ESP.Settings.Distance and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
             pData.DistanceTag.Text = "[" .. math.floor(distance) .. "m]"
             pData.DistanceTag.Size = ESP.Settings.TextSize
@@ -430,7 +422,6 @@ local function addPlayer(player)
             pData.DistanceTag.Visible = false
         end
 
-        -- Weapon Tag
         if ESP.Settings.Weapon then
             local tool = character:FindFirstChildOfClass("Tool")
             pData.WeaponTag.Text = tool and tool.Name or "None"
@@ -442,7 +433,6 @@ local function addPlayer(player)
             pData.WeaponTag.Visible = false
         end
 
-        -- Tracers
         if ESP.Settings.Tracers then
             pData.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
             pData.Tracer.To = Vector2.new(rootPos.X, rootPos.Y)
@@ -452,7 +442,6 @@ local function addPlayer(player)
             pData.Tracer.Visible = false
         end
 
-        -- Skeleton
         if ESP.Settings.Skeleton then
             local joints = humanoid.RigType == Enum.HumanoidRigType.R15 and skeletonJoints or skeletonJointsR6
             for i, joint in ipairs(joints) do
@@ -493,7 +482,6 @@ function ESP:Init()
     table.insert(Connections, Players.PlayerAdded:Connect(addPlayer))
     table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
 
-    -- Lighting Loop (Fullbright, Fog, Time, Ambient)
     table.insert(Connections, RunService.RenderStepped:Connect(function()
         if ESP.Settings.Fullbright then
             Lighting.Brightness = 2
@@ -540,7 +528,6 @@ function ESP:Toggle(state)
     ESP.Settings.Enabled = (state == nil and not ESP.Settings.Enabled) or state
 end
 
--- ฟังก์ชันเคลียร์และทำลายสคริปต์สะอาด 100%
 function ESP:Destroy()
     for _, conn in ipairs(Connections) do
         pcall(function() conn:Disconnect() end)
@@ -556,7 +543,6 @@ function ESP:Destroy()
         removeESP(player)
     end
     
-    -- คืนค่าแสงเดิม
     pcall(function()
         Lighting.Brightness = OriginalLighting.Brightness
         Lighting.GlobalShadows = OriginalLighting.GlobalShadows
