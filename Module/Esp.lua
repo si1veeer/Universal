@@ -184,9 +184,8 @@ local function addPlayer(player)
         local character = player.Character
         local rootPart = character and character:FindFirstChild("HumanoidRootPart")
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-        local head = character and character:FindFirstChild("Head")
 
-        if not ESP.Settings.Enabled or not rootPart or not humanoid or not head or humanoid.Health <= 0 then
+        if not ESP.Settings.Enabled or not character or not rootPart or not humanoid or humanoid.Health <= 0 then
             hideAll()
             return
         end
@@ -202,16 +201,19 @@ local function addPlayer(player)
             return
         end
 
+        -- ใช้ GetBoundingBox เพื่อครอบคลุมทั้งตัวละคร (รวมหัว ผม หมวก และเท้า) แบบเรียลไทม์
+        local cframe, size = character:GetBoundingBox()
+        local topWorld = cframe.Position + Vector3.new(0, size.Y / 2, 0)
+        local bottomWorld = cframe.Position - Vector3.new(0, size.Y / 2, 0)
+        
+        local topPos, topVisible = Camera:WorldToViewportPoint(topWorld)
+        local bottomPos, bottomVisible = Camera:WorldToViewportPoint(bottomWorld)
         local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+
         if not onScreen then
             hideAll()
             return
         end
-
-        local topWorld = head.Position + Vector3.new(0, 0.8, 0)
-        local bottomWorld = rootPart.Position - Vector3.new(0, 3, 0)
-        local topPos = Camera:WorldToViewportPoint(topWorld)
-        local bottomPos = Camera:WorldToViewportPoint(bottomWorld)
 
         local boxHeight = math.abs(topPos.Y - bottomPos.Y)
         local boxWidth = boxHeight / 2.0 
@@ -243,7 +245,6 @@ local function addPlayer(player)
                     lines[i].Color = boxColor
                 end
 
-                -- ปรับความหนาขอบดำเด่นชัดขึ้น (Outline Thickness = 5, Inner = 2)
                 lines[1].From = Vector2.new(boxX, boxY) lines[1].To = Vector2.new(boxX + lengthX, boxY) lines[1].Color = outlineColor lines[1].Thickness = 5
                 lines[2].From = Vector2.new(boxX, boxY) lines[2].To = Vector2.new(boxX + lengthX, boxY) lines[2].Color = boxColor lines[2].Thickness = 2
                 lines[3].From = Vector2.new(boxX, boxY) lines[3].To = Vector2.new(boxX, boxY + lengthY) lines[3].Color = outlineColor lines[3].Thickness = 5
@@ -333,10 +334,13 @@ function ESP:Init()
 end
 
 function ESP:UpdateSettings(newSettings)
-    for key, val in pairs(newSettings) do
-        if ESP.Settings[key] ~= nil then
-            ESP.Settings[key] = val
+    for key, val in pairs(newDetails or newSettings) do
+        for k, v in pairs(newSettings) do
+            if ESP.Settings[k] ~= nil then
+                ESP.Settings[k] = v
+            end
         end
+        break
     end
 end
 
