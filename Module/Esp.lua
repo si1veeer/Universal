@@ -2,9 +2,11 @@ local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
+-- ลบ ESP ตัวเก่าทิ้งก่อนเพื่อป้องกันการซ้อนทับ
 if getgenv().ESP and typeof(getgenv().ESP.Destroy) == "function" then
     pcall(function() getgenv().ESP:Destroy() end)
 end
@@ -129,7 +131,7 @@ local function addPlayer(player)
         {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
         {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
         {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
-        {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightRightFoot"}
+        {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"}
     }
 
     local skeletonJointsR6 = {
@@ -155,12 +157,10 @@ local function addPlayer(player)
         CachedVisResult = true
     }
 
-    -- สร้างเส้นสำหรับ Corner Box
     for i = 1, 16 do
         pData.CornerLines[i] = createDrawing("Line", {Color = ESP.Settings.BoxColor, Thickness = 1.5, Visible = false})
     end
 
-    -- สร้างเส้นสำหรับ Skeleton
     for i = 1, 14 do
         pData.SkeletonLines[i] = createDrawing("Line", {Color = ESP.Settings.SkeletonColor, Thickness = 1, Visible = false, Transparency = 0.8})
     end
@@ -232,11 +232,10 @@ local function addPlayer(player)
         local boxX = rootPos.X - (boxWidth / 2)
         local boxY = topPos.Y
 
-        -- === 1. Render Box (รองรับทั้งแบบ Normal Box และ Corner Box) ===
+        -- Render Box & Corner
         if ESP.Settings.Box then
             if ESP.Settings.BoxType == "Box" then
                 for _, line in pairs(pData.CornerLines) do line.Visible = false end
-                
                 pData.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
                 pData.BoxOutline.Position = Vector2.new(boxX, boxY)
                 pData.BoxOutline.Visible = true
@@ -255,7 +254,6 @@ local function addPlayer(player)
                 local outlineColor = Color3.fromRGB(0, 0, 0)
                 local boxColor = ESP.Settings.BoxColor
 
-                -- วาดเส้นมุม 4 ด้าน (มีขอบดำซ้อน)
                 lines[1].From = Vector2.new(boxX, boxY) lines[1].To = Vector2.new(boxX + lengthX, boxY) lines[1].Color = outlineColor lines[1].Thickness = 2.5
                 lines[2].From = Vector2.new(boxX, boxY) lines[2].To = Vector2.new(boxX + lengthX, boxY) lines[2].Color = boxColor lines[2].Thickness = 1.25
                 lines[3].From = Vector2.new(boxX, boxY) lines[3].To = Vector2.new(boxX, boxY + lengthY) lines[3].Color = outlineColor lines[3].Thickness = 2.5
@@ -284,7 +282,7 @@ local function addPlayer(player)
             for _, line in pairs(pData.CornerLines) do line.Visible = false end
         end
 
-        -- === 2. Render HealthBar (รองรับการสลับฝั่ง Left / Right) ===
+        -- Render HealthBar
         if ESP.Settings.HealthBar then
             local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
             local barHeight = boxHeight * healthPercent
@@ -303,7 +301,7 @@ local function addPlayer(player)
             pData.HealthBarOutline.Visible = false
         end
 
-        -- === 3. Render NameTag ===
+        -- Render Name Tag
         if ESP.Settings.Name then
             pData.NameTag.Text = player.Name
             pData.NameTag.Size = ESP.Settings.TextSize
@@ -314,7 +312,7 @@ local function addPlayer(player)
             pData.NameTag.Visible = false
         end
 
-        -- === 4. Render Distance ===
+        -- Render Distance Tag
         if ESP.Settings.Distance then
             pData.DistanceTag.Text = "[" .. math.floor(distance) .. "m]"
             pData.DistanceTag.Size = ESP.Settings.TextSize
@@ -337,6 +335,15 @@ function ESP:Init()
     end
     table.insert(Connections, Players.PlayerAdded:Connect(addPlayer))
     table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
+
+    -- ระบบกดปุ่ม Numpad 1 เพื่อ Unload (Destroy)
+    table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if not gameProcessed and input.KeyCode == Enum.KeyCode.KeypadOne then
+            pcall(function()
+                ESP:Destroy()
+            end)
+        end
+    end))
 end
 
 function ESP:UpdateSettings(newSettings)
@@ -356,6 +363,15 @@ function ESP:Destroy()
     local list = {}
     for player in pairs(ESPData) do table.insert(list, player) end
     for _, player in ipairs(list) do removeESP(player) end
+
+    pcall(function()
+        Lighting.Brightness = OriginalLighting.Brightness
+        Lighting.GlobalShadows = OriginalLighting.GlobalShadows
+        Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+        Lighting.FogEnd = OriginalLighting.FogEnd
+        Lighting.ClockTime = OriginalLighting.ClockTime
+        Lighting.Ambient = OriginalLighting.Ambient
+    end)
 
     getgenv().ESP = nil
 end
