@@ -22,7 +22,7 @@ local OriginalLighting = {
     ClockTime = Lighting.ClockTime
 }
 
--- แก้ไขค่าเริ่มต้นตรงนี้ให้เป็น Corner และ HealthBar อยู่ฝั่งซ้าย
+-- ตั้งค่าเริ่มต้นทั้งหมดตรงนี้ (Corner, สีขาว, หลอดเลือดซ้าย)
 ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
@@ -30,11 +30,11 @@ ESP.Settings = {
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
-    BoxType = "Corner",                     -- ตั้งค่าเริ่มต้นเป็นมุมฉาก
-    BoxColor = Color3.fromRGB(255, 255, 255), -- ตั้งค่าเริ่มต้นเป็นสีขาว
+    BoxType = "Corner",                     -- ค่าเริ่มต้นเป็นกรอบมุมฉาก
+    BoxColor = Color3.fromRGB(255, 255, 255), -- ค่าเริ่มต้นเป็นสีขาว
     HealthBar = true,
-    HealthBarSide = "Left",                 -- ตั้งค่าเริ่มต้นให้หลอดเลือดอยู่ฝั่งซ้าย
-    DynamicHealthColor = false,             -- ปิดการเปลี่ยนสีตามเลือด
+    HealthBarSide = "Left",                 -- หลอดเลือดอยู่ฝั่งซ้าย
+    DynamicHealthColor = false,             -- ปิดเปลี่ยนสีตามเลือด
     HealthBarColor = Color3.fromRGB(0, 255, 0), -- หลอดเลือดสีเขียว
     HealthText = false,
     Weapon = false,
