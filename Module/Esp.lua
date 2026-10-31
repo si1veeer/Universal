@@ -29,11 +29,11 @@ ESP.Settings = {
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
-    BoxType = "Corner",
+    BoxType = "Box",
     BoxColor = Color3.fromRGB(255, 255, 255),
     HealthBar = true,
-    HealthBarSide = "Left",
-    DynamicHealthColor = false,
+    HealthBarSide = "Right",
+    DynamicHealthColor = true,
     HealthBarColor = Color3.fromRGB(0, 255, 0),
     HealthText = false,
     Weapon = false,
@@ -134,7 +134,7 @@ local function addPlayer(player)
         HealthTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 12, Center = false, Outline = true, Visible = false}),
         WeaponTag = createDrawing("Text", {Color = ESP.Settings.WeaponColor, Size = ESP.Settings.TextSize, Center = true, Outline = true, Visible = false}),
         NameTag = createDrawing("Text", {Color = ESP.Settings.NameColor, Size = ESP.Settings.TextSize, Center = true, Outline = true, Visible = false}),
-        DistanceTag = createDrawing("Text", {Color = ESP.Settings.DistanceColor, Size = ESP.Settings.TextSize, Center = true, Outline = true, Visible = false}),
+        DistanceTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = ESP.Settings.TextSize, Center = true, Outline = true, Visible = false}),
         Tracer = createDrawing("Line", {Color = ESP.Settings.TracerColor, Thickness = 1, Visible = false}),
         Arrow = createDrawing("Triangle", {Color = ESP.Settings.ArrowColor, Filled = true, Visible = false, Transparency = 0.8}),
         ArrowText = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 11, Center = true, Outline = true, Visible = false}),
@@ -205,8 +205,8 @@ local function addPlayer(player)
         local topWorld = cframe.Position + Vector3.new(0, size.Y / 2, 0)
         local bottomWorld = cframe.Position - Vector3.new(0, size.Y / 2, 0)
         
-        local topPos, topVisible = Camera:WorldToViewportPoint(topWorld)
-        local bottomPos, bottomVisible = Camera:WorldToViewportPoint(bottomWorld)
+        local topPos = Camera:WorldToViewportPoint(topWorld)
+        local bottomPos = Camera:WorldToViewportPoint(bottomWorld)
         local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
 
         if not onScreen then
@@ -244,7 +244,6 @@ local function addPlayer(player)
                     lines[i].Color = boxColor
                 end
 
-                -- ปรับความหนาให้พอดีและสมดุลกับ HP Bar (Outline = 3, Inner = 1.25)
                 lines[1].From = Vector2.new(boxX, boxY) lines[1].To = Vector2.new(boxX + lengthX, boxY) lines[1].Color = outlineColor lines[1].Thickness = 3
                 lines[2].From = Vector2.new(boxX, boxY) lines[2].To = Vector2.new(boxX + lengthX, boxY) lines[2].Color = boxColor lines[2].Thickness = 1.25
                 lines[3].From = Vector2.new(boxX, boxY) lines[3].To = Vector2.new(boxX, boxY + lengthY) lines[3].Color = outlineColor lines[3].Thickness = 3
@@ -334,13 +333,10 @@ function ESP:Init()
 end
 
 function ESP:UpdateSettings(newSettings)
-    for _, v in pairs(newSettings) do
-        for k, val in pairs(newSettings) do
-            if ESP.Settings[k] ~= nil then
-                ESP.Settings[k] = val
-            end
+    for k, val in pairs(newSettings) do
+        if ESP.Settings[k] ~= nil then
+            ESP.Settings[k] = val
         end
-        break
     end
 end
 
