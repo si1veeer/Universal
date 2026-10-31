@@ -6,7 +6,6 @@ local UserInputService = game:GetService("UserInputService")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- ลบ ESP ตัวเก่าทิ้งก่อนเพื่อป้องกันการซ้อนทับ
 if getgenv().ESP and typeof(getgenv().ESP.Destroy) == "function" then
     pcall(function() getgenv().ESP:Destroy() end)
 end
@@ -30,12 +29,12 @@ ESP.Settings = {
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
-    BoxType = "Box", -- "Box" หรือ "Corner"
-    BoxColor = Color3.fromRGB(255, 255, 255),
+    BoxType = "Corner", -- ตั้งค่าเริ่มต้นเป็นมุมฉาก
+    BoxColor = Color3.fromRGB(255, 0, 0),
     HealthBar = true,
-    HealthBarSide = "Left", -- "Left" หรือ "Right"
-    DynamicHealthColor = true,
-    HealthBarColor = Color3.fromRGB(0, 255, 0),
+    HealthBarSide = "Left", -- ตั้งค่าเริ่มต้นให้หลอดเลือดอยู่ฝั่งซ้าย
+    DynamicHealthColor = false, -- ปิดเปลี่ยนสีตามเลือด เพื่อให้เป็นสีเขียวคงที่
+    HealthBarColor = Color3.fromRGB(0, 255, 0), -- สีเขียว
     HealthText = false,
     Weapon = false,
     WeaponColor = Color3.fromRGB(255, 255, 255),
@@ -232,7 +231,6 @@ local function addPlayer(player)
         local boxX = rootPos.X - (boxWidth / 2)
         local boxY = topPos.Y
 
-        -- Render Box & Corner
         if ESP.Settings.Box then
             if ESP.Settings.BoxType == "Box" then
                 for _, line in pairs(pData.CornerLines) do line.Visible = false end
@@ -282,7 +280,6 @@ local function addPlayer(player)
             for _, line in pairs(pData.CornerLines) do line.Visible = false end
         end
 
-        -- Render HealthBar
         if ESP.Settings.HealthBar then
             local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
             local barHeight = boxHeight * healthPercent
@@ -301,7 +298,6 @@ local function addPlayer(player)
             pData.HealthBarOutline.Visible = false
         end
 
-        -- Render Name Tag
         if ESP.Settings.Name then
             pData.NameTag.Text = player.Name
             pData.NameTag.Size = ESP.Settings.TextSize
@@ -312,7 +308,6 @@ local function addPlayer(player)
             pData.NameTag.Visible = false
         end
 
-        -- Render Distance Tag
         if ESP.Settings.Distance then
             pData.DistanceTag.Text = "[" .. math.floor(distance) .. "m]"
             pData.DistanceTag.Size = ESP.Settings.TextSize
@@ -336,7 +331,6 @@ function ESP:Init()
     table.insert(Connections, Players.PlayerAdded:Connect(addPlayer))
     table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
 
-    -- ระบบกดปุ่ม Numpad 1 เพื่อ Unload (Destroy)
     table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed and input.KeyCode == Enum.KeyCode.KeypadOne then
             pcall(function()
@@ -360,9 +354,11 @@ function ESP:Destroy()
     end
     Connections = {}
 
-    local list = {}
-    for player in pairs(ESPData) do table.insert(list, player) end
-    for _, player in ipairs(list) do removeESP(player) end
+    (function()
+        local list = {}
+        for player in pairs(ESPData) do table.insert(list, player) end
+        for _, player in ipairs(list) do removeESP(player) end
+    end)()
 
     pcall(function()
         Lighting.Brightness = OriginalLighting.Brightness
