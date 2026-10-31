@@ -254,3 +254,4 @@ end
 
 ESP:Init()
 getgenv().ESP = ESP
+return ESP
