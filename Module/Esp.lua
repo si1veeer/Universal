@@ -8,7 +8,6 @@ local CoreGui = game:GetService("CoreGui")
 local Camera = workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
 
--- สแนปช็อตค่า Lighting ดั้งเดิม
 local OriginalLighting = {
     Brightness = Lighting.Brightness,
     GlobalShadows = Lighting.GlobalShadows,
@@ -18,7 +17,6 @@ local OriginalLighting = {
     ClockTime = Lighting.ClockTime
 }
 
--- การตั้งค่าเริ่มต้น
 ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
@@ -26,10 +24,10 @@ ESP.Settings = {
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
-    BoxType = "Box", -- "Box" หรือ "Corner"
+    BoxType = "Box",
     BoxColor = Color3.fromRGB(255, 255, 255),
     HealthBar = true,
-    HealthBarSide = "Left", -- "Left" หรือ "Right"
+    HealthBarSide = "Left",
     DynamicHealthColor = true,
     HealthBarColor = Color3.fromRGB(0, 255, 0),
     HealthText = false,
@@ -75,7 +73,9 @@ local Connections = {}
 local function createDrawing(class, properties)
     local draw = Drawing.new(class)
     for prop, val in pairs(properties) do
-        draw[prop] = val
+        pcall(function()
+            draw[prop] = val
+        end)
     end
     return draw
 end
@@ -83,7 +83,9 @@ end
 local function removeChams(player)
     if ChamsData[player] then
         if ChamsData[player].Highlight then
-            ChamsData[player].Highlight:Destroy()
+            pcall(function()
+                ChamsData[player].Highlight:Destroy()
+            end)
         end
         ChamsData[player] = nil
     end
@@ -91,31 +93,33 @@ end
 
 local function removeESP(player)
     if ESPData[player] then
-        if ESPData[player].Connection then ESPData[player].Connection:Disconnect() end
-        if ESPData[player].Box then ESPData[player].Box:Remove() end
-        if ESPData[player].BoxOutline then ESPData[player].BoxOutline:Remove() end
-        
-        if ESPData[player].CornerLines then
-            for _, line in pairs(ESPData[player].CornerLines) do
-                line:Remove()
+        pcall(function()
+            if ESPData[player].Connection then ESPData[player].Connection:Disconnect() end
+            if ESPData[player].Box then ESPData[player].Box:Remove() end
+            if ESPData[player].BoxOutline then ESPData[player].BoxOutline:Remove() end
+            
+            if ESPData[player].CornerLines then
+                for _, line in pairs(ESPData[player].CornerLines) do
+                    line:Remove()
+                end
             end
-        end
 
-        if ESPData[player].HealthBar then ESPData[player].HealthBar:Remove() end
-        if ESPData[player].HealthBarOutline then ESPData[player].HealthBarOutline:Remove() end
-        if ESPData[player].HealthTag then ESPData[player].HealthTag:Remove() end
-        if ESPData[player].WeaponTag then ESPData[player].WeaponTag:Remove() end
-        if ESPData[player].NameTag then ESPData[player].NameTag:Remove() end
-        if ESPData[player].DistanceTag then ESPData[player].DistanceTag:Remove() end
-        if ESPData[player].Tracer then ESPData[player].Tracer:Remove() end
-        if ESPData[player].Arrow then ESPData[player].Arrow:Remove() end
-        if ESPData[player].ArrowText then ESPData[player].ArrowText:Remove() end
-        
-        if ESPData[player].SkeletonLines then
-            for _, line in pairs(ESPData[player].SkeletonLines) do
-                line:Remove()
+            if ESPData[player].HealthBar then ESPData[player].HealthBar:Remove() end
+            if ESPData[player].HealthBarOutline then ESPData[player].HealthBarOutline:Remove() end
+            if ESPData[player].HealthTag then ESPData[player].HealthTag:Remove() end
+            if ESPData[player].WeaponTag then ESPData[player].WeaponTag:Remove() end
+            if ESPData[player].NameTag then ESPData[player].NameTag:Remove() end
+            if ESPData[player].DistanceTag then ESPData[player].DistanceTag:Remove() end
+            if ESPData[player].Tracer then ESPData[player].Tracer:Remove() end
+            if ESPData[player].Arrow then ESPData[player].Arrow:Remove() end
+            if ESPData[player].ArrowText then ESPData[player].ArrowText:Remove() end
+            
+            if ESPData[player].SkeletonLines then
+                for _, line in pairs(ESPData[player].SkeletonLines) do
+                    line:Remove()
+                end
             end
-        end
+        end)
         ESPData[player] = nil
     end
     removeChams(player)
@@ -125,28 +129,16 @@ local function addPlayer(player)
     if player == LocalPlayer then return end
     
     local skeletonJoints = {
-        {"Head", "UpperTorso"},
-        {"UpperTorso", "LowerTorso"},
-        {"UpperTorso", "LeftUpperArm"},
-        {"LeftUpperArm", "LeftLowerArm"},
-        {"LeftLowerArm", "LeftHand"},
-        {"UpperTorso", "RightUpperArm"},
-        {"RightUpperArm", "RightLowerArm"},
-        {"RightLowerArm", "RightHand"},
-        {"LowerTorso", "LeftUpperLeg"},
-        {"LeftUpperLeg", "LeftLowerLeg"},
-        {"LeftLowerLeg", "LeftFoot"},
-        {"LowerTorso", "RightUpperLeg"},
-        {"RightUpperLeg", "RightLowerLeg"},
-        {"RightLowerLeg", "RightFoot"}
+        {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
+        {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
+        {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
+        {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
+        {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"}
     }
 
     local skeletonJointsR6 = {
-        {"Head", "Torso"},
-        {"Torso", "Left Arm"},
-        {"Torso", "Right Arm"},
-        {"Torso", "Left Leg"},
-        {"Torso", "Right Leg"}
+        {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"},
+        {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
     }
 
     local pData = {
@@ -226,108 +218,11 @@ local function addPlayer(player)
             return
         end
 
-        local currentTime = tick()
-        if currentTime - pData.LastVisCheck > 0.2 then
-            pData.LastVisCheck = currentTime
-            local isVisible = true
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
-                local origin = Camera.CFrame.Position
-                local targetPos = head.Position
-                local raycastParams = RaycastParams.new()
-                raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-                
-                local filterTable = {LocalPlayer.Character, character}
-                if Camera then table.insert(filterTable, Camera) end
-                raycastParams.FilterDescendantsInstances = filterTable
-                
-                local result = workspace:Raycast(origin, targetPos - origin, raycastParams)
-                if result then isVisible = false end
-            end
-            pData.CachedVisResult = isVisible
-        end
-
-        if ESP.Settings.VisCheck and not pData.CachedVisResult then
-            hideAll()
-            return
-        end
-
-        -- Chams Logic
-        if ESP.Settings.Chams then
-            highlight.Adornee = character
-            if ESP.Settings.ChamsVisibleCheck then
-                highlight.FillColor = pData.CachedVisResult and ESP.Settings.ChamsVisibleColor or ESP.Settings.ChamsHiddenColor
-            else
-                highlight.FillColor = ESP.Settings.ChamsFillColor
-            end
-            highlight.OutlineColor = ESP.Settings.ChamsOutlineColor
-            highlight.FillTransparency = ESP.Settings.ChamsFillTransparency / 100
-            highlight.OutlineTransparency = ESP.Settings.ChamsOutlineTransparency / 100
-            
-            for _, desc in ipairs(character:GetDescendants()) do
-                if desc:IsA("BasePart") then
-                    pcall(function()
-                        desc.Material = Enum.Material[ESP.Settings.ChamsMaterial] or Enum.Material.SmoothPlastic
-                    end)
-                end
-            end
-            highlight.Enabled = true
-        else
-            highlight.Enabled = false
-            if character then
-                for _, desc in ipairs(character:GetDescendants()) do
-                    if desc:IsA("BasePart") then
-                        pcall(function() desc.Material = Enum.Material.SmoothPlastic end)
-                    end
-                end
-            end
-        end
-
         local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
 
-        -- Offscreen Arrows
         if not onScreen then
             hideAll()
-            if ESP.Settings.OffScreenArrows then
-                local camPos = Camera.CFrame.Position
-                local camLook = Camera.CFrame.LookVector
-                local relPos = rootPart.Position - camPos
-                local relFlat = Vector3.new(relPos.X, 0, relPos.Z).Unit
-                local lookFlat = Vector3.new(camLook.X, 0, camLook.Z).Unit
-                
-                local dot = lookFlat:Dot(relFlat)
-                local cross = lookFlat:Cross(relFlat).Y
-                local angle = math.acos(math.clamp(dot, -1, 1))
-                if cross < 0 then angle = -angle end
-
-                local viewCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                local radius = ESP.Settings.ArrowRadius
-                local arrowPos = viewCenter + Vector2.new(math.cos(angle - math.pi/2), math.sin(angle - math.pi/2)) * radius
-
-                local size = ESP.Settings.ArrowSize
-                local dir = (viewCenter - arrowPos).Unit
-                local p1 = arrowPos
-                local p2 = arrowPos + Vector2.new(-dir.Y, dir.X) * (size / 2) - dir * size
-                local p3 = arrowPos + Vector2.new(dir.Y, -dir.X) * (size / 2) - dir * size
-
-                pData.Arrow.PointA = p1
-                pData.Arrow.PointB = p2
-                pData.Arrow.PointC = p3
-                pData.Arrow.Color = ESP.Settings.ArrowColor
-                pData.Arrow.Visible = true
-
-                if ESP.Settings.ArrowDistanceText then
-                    pData.ArrowText.Text = math.floor(distance) .. "m"
-                    pData.ArrowText.Size = ESP.Settings.ArrowTextSize
-                    pData.ArrowText.Position = arrowPos + (dir * -ESP.Settings.ArrowTextOffset)
-                    pData.ArrowText.Visible = true
-                else
-                    pData.ArrowText.Visible = false
-                end
-            end
             return
-        else
-            pData.Arrow.Visible = false
-            pData.ArrowText.Visible = false
         end
 
         local topWorld = head.Position + Vector3.new(0, 0.8, 0)
@@ -340,66 +235,24 @@ local function addPlayer(player)
         local boxX = rootPos.X - (boxWidth / 2)
         local boxY = topPos.Y
 
-        -- Box Rendering
         if ESP.Settings.Box then
-            if ESP.Settings.BoxType == "Box" then
-                for _, line in pairs(pData.CornerLines) do line.Visible = false end
+            pData.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
+            pData.BoxOutline.Position = Vector2.new(boxX, boxY)
+            pData.BoxOutline.Visible = true
 
-                pData.BoxOutline.Size = Vector2.new(boxWidth, boxHeight)
-                pData.BoxOutline.Position = Vector2.new(boxX, boxY)
-                pData.BoxOutline.Visible = true
-
-                pData.Box.Size = Vector2.new(boxWidth, boxHeight)
-                pData.Box.Position = Vector2.new(boxX, boxY)
-                pData.Box.Color = ESP.Settings.BoxColor
-                pData.Box.Visible = true
-            elseif ESP.Settings.BoxType == "Corner" then
-                pData.Box.Visible = false
-                pData.BoxOutline.Visible = false
-
-                local lengthX = boxWidth / 4
-                local lengthY = boxHeight / 4
-                local lines = pData.CornerLines
-                local outlineColor = Color3.fromRGB(0, 0, 0)
-                local boxColor = ESP.Settings.BoxColor
-
-                lines[1].From = Vector2.new(boxX, boxY) lines[1].To = Vector2.new(boxX + lengthX, boxY) lines[1].Color = outlineColor lines[1].Thickness = 2.5
-                lines[2].From = Vector2.new(boxX, boxY) lines[2].To = Vector2.new(boxX + lengthX, boxY) lines[2].Color = boxColor lines[2].Thickness = 1.25
-                
-                lines[3].From = Vector2.new(boxX, boxY) lines[3].To = Vector2.new(boxX, boxY + lengthY) lines[3].Color = outlineColor lines[3].Thickness = 2.5
-                lines[4].From = Vector2.new(boxX, boxY) lines[4].To = Vector2.new(boxX, boxY + lengthY) lines[4].Color = boxColor lines[4].Thickness = 1.25
-
-                lines[5].From = Vector2.new(boxX + boxWidth, boxY) lines[5].To = Vector2.new(boxX + boxWidth - lengthX, boxY) lines[5].Color = outlineColor lines[5].Thickness = 2.5
-                lines[6].From = Vector2.new(boxX + boxWidth, boxY) lines[6].To = Vector2.new(boxX + boxWidth - lengthX, boxY) lines[6].Color = boxColor lines[6].Thickness = 1.25
-                
-                lines[7].From = Vector2.new(boxX + boxWidth, boxY) lines[7].To = Vector2.new(boxX + boxWidth, boxY + lengthY) lines[7].Color = outlineColor lines[7].Thickness = 2.5
-                lines[8].From = Vector2.new(boxX + boxWidth, boxY) lines[8].To = Vector2.new(boxX + boxWidth, boxY + lengthY) lines[8].Color = boxColor lines[8].Thickness = 1.25
-
-                lines[9].From = Vector2.new(boxX, boxY + boxHeight) lines[9].To = Vector2.new(boxX + lengthX, boxY + boxHeight) lines[9].Color = outlineColor lines[9].Thickness = 2.5
-                lines[10].From = Vector2.new(boxX, boxY + boxHeight) lines[10].To = Vector2.new(boxX + lengthX, boxY + boxHeight) lines[10].Color = boxColor lines[10].Thickness = 1.25
-                
-                lines[11].From = Vector2.new(boxX, boxY + boxHeight) lines[11].To = Vector2.new(boxX, boxY + boxHeight - lengthY) lines[11].Color = outlineColor lines[11].Thickness = 2.5
-                lines[12].From = Vector2.new(boxX, boxY + boxHeight) lines[12].To = Vector2.new(boxX, boxY + boxHeight - lengthY) lines[12].Color = boxColor lines[12].Thickness = 1.25
-
-                lines[13].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[13].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[13].Color = outlineColor lines[13].Thickness = 2.5
-                lines[14].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[14].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[14].Color = boxColor lines[14].Thickness = 1.25
-                
-                lines[15].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[15].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[15].Color = outlineColor lines[15].Thickness = 2.5
-                lines[16].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[16].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[16].Color = boxColor lines[16].Thickness = 1.25
-
-                for i = 1, 16 do lines[i].Visible = true end
-            end
+            pData.Box.Size = Vector2.new(boxWidth, boxHeight)
+            pData.Box.Position = Vector2.new(boxX, boxY)
+            pData.Box.Color = ESP.Settings.BoxColor
+            pData.Box.Visible = true
         else
             pData.Box.Visible = false
             pData.BoxOutline.Visible = false
-            for _, line in pairs(pData.CornerLines) do line.Visible = false end
         end
 
-        -- HealthBar
         if ESP.Settings.HealthBar then
             local healthPercent = math.clamp(humanoid.Health / humanoid.MaxHealth, 0, 1)
             local barHeight = boxHeight * healthPercent
-            local barX = (ESP.Settings.HealthBarSide == "Left") and (boxX - 5) or (boxX + boxWidth + 2)
+            local barX = boxX - 5
             
             pData.HealthBarOutline.Size = Vector2.new(3, boxHeight)
             pData.HealthBarOutline.Position = Vector2.new(barX, boxY)
@@ -407,24 +260,13 @@ local function addPlayer(player)
 
             pData.HealthBar.Size = Vector2.new(1, barHeight)
             pData.HealthBar.Position = Vector2.new(barX + 1, boxY + boxHeight - barHeight)
-            pData.HealthBar.Color = ESP.Settings.DynamicHealthColor and Color3.fromHSV(healthPercent * 0.3, 1, 1) or ESP.Settings.HealthBarColor
+            pData.HealthBar.Color = Color3.fromHSV(healthPercent * 0.3, 1, 1)
             pData.HealthBar.Visible = true
-
-            if ESP.Settings.HealthText then
-                pData.HealthTag.Text = math.floor(humanoid.Health)
-                pData.HealthTag.Size = 12
-                pData.HealthTag.Position = (ESP.Settings.HealthBarSide == "Left") and Vector2.new(barX - 20, boxY + boxHeight - barHeight - 5) or Vector2.new(barX + 6, boxY + boxHeight - barHeight - 5)
-                pData.HealthTag.Visible = true
-            else
-                pData.HealthTag.Visible = false
-            end
         else
             pData.HealthBar.Visible = false
             pData.HealthBarOutline.Visible = false
-            pData.HealthTag.Visible = false
         end
 
-        -- Name Tag
         if ESP.Settings.Name then
             pData.NameTag.Text = player.Name
             pData.NameTag.Size = ESP.Settings.TextSize
@@ -434,67 +276,6 @@ local function addPlayer(player)
         else
             pData.NameTag.Visible = false
         end
-
-        -- Distance Tag
-        if ESP.Settings.Distance and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            pData.DistanceTag.Text = "[" .. math.floor(distance) .. "m]"
-            pData.DistanceTag.Size = ESP.Settings.TextSize
-            pData.DistanceTag.Position = Vector2.new(boxX + (boxWidth / 2), boxY + boxHeight + 2)
-            pData.DistanceTag.Color = ESP.Settings.DistanceColor
-            pData.DistanceTag.Visible = true
-        else
-            pData.DistanceTag.Visible = false
-        end
-
-        -- Weapon Tag
-        if ESP.Settings.Weapon then
-            local tool = character:FindFirstChildOfClass("Tool")
-            pData.WeaponTag.Text = tool and tool.Name or "None"
-            pData.WeaponTag.Size = ESP.Settings.TextSize
-            pData.WeaponTag.Position = Vector2.new(boxX + (boxWidth / 2), boxY + boxHeight + (ESP.Settings.Distance and 18 or 2))
-            pData.WeaponTag.Color = ESP.Settings.WeaponColor
-            pData.WeaponTag.Visible = true
-        else
-            pData.WeaponTag.Visible = false
-        end
-
-        -- Tracers
-        if ESP.Settings.Tracers then
-            pData.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-            pData.Tracer.To = Vector2.new(rootPos.X, rootPos.Y)
-            pData.Tracer.Color = ESP.Settings.TracerColor
-            pData.Tracer.Visible = true
-        else
-            pData.Tracer.Visible = false
-        end
-
-        -- Skeleton
-        if ESP.Settings.Skeleton then
-            local joints = humanoid.RigType == Enum.HumanoidRigType.R15 and skeletonJoints or skeletonJointsR6
-            for i, joint in ipairs(joints) do
-                local partA = character:FindFirstChild(joint[1])
-                local partB = character:FindFirstChild(joint[2])
-                local line = pData.SkeletonLines[i]
-
-                if partA and partB and line then
-                    local posA, onScreenA = Camera:WorldToViewportPoint(partA.Position)
-                    local posB, onScreenB = Camera:WorldToViewportPoint(partB.Position)
-
-                    if onScreenA or onScreenB then
-                        line.From = Vector2.new(posA.X, posA.Y)
-                        line.To = Vector2.new(posB.X, posB.Y)
-                        line.Color = ESP.Settings.SkeletonColor
-                        line.Visible = true
-                    else
-                        line.Visible = false
-                    end
-                else
-                    if line then line.Visible = false end
-                end
-            end
-        else
-            for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
-        end
     end)
 
     player.AncestryChanged:Connect(function(_, parent)
@@ -502,7 +283,6 @@ local function addPlayer(player)
     end)
 end
 
--- เริ่มทำงานระบบหลัก
 function ESP:Init()
     for _, player in ipairs(Players:GetPlayers()) do
         addPlayer(player)
@@ -510,71 +290,36 @@ function ESP:Init()
 
     table.insert(Connections, Players.PlayerAdded:Connect(addPlayer))
     table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
-
-    -- Lighting Loop
-    table.insert(Connections, RunService.RenderStepped:Connect(function()
-        if ESP.Settings.Fullbright then
-            Lighting.Brightness = 2
-            Lighting.GlobalShadows = false
-            Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-        else
-            Lighting.Brightness = OriginalLighting.Brightness
-            Lighting.GlobalShadows = OriginalLighting.GlobalShadows
-            Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
-        end
-
-        if ESP.Settings.RemoveFog then
-            Lighting.FogEnd = 999999
-            for _, v in ipairs(Lighting:GetChildren()) do
-                if v:IsA("Atmosphere") then v.Density = 0 end
-            end
-        else
-            Lighting.FogEnd = OriginalLighting.FogEnd
-        end
-
-        if ESP.Settings.CustomTime then
-            Lighting.ClockTime = ESP.Settings.TimeOfDay
-        else
-            Lighting.ClockTime = OriginalLighting.ClockTime
-        end
-
-        if ESP.Settings.AmbientColorEnabled then
-            Lighting.Ambient = ESP.Settings.AmbientColor
-        else
-            Lighting.Ambient = OriginalLighting.Ambient
-        end
-    end))
 end
 
--- ฟังก์ชันสำหรับอัปเดต Settings
-function ESP:UpdateSettings(newSettings)
-    for key, val in pairs(newSettings) do
-        if ESP.Settings[key] ~= nil then
-            ESP.Settings[key] = val
-        end
-    end
-end
-
--- ฟังก์ชันปิด/เปิด ESP ทั้งหมด
-function ESP:Toggle(state)
-    ESP.Settings.Enabled = (state == nil and not ESP.Settings.Enabled) or state
-end
-
--- ฟังก์ชันการคืนค่าทั้งหมดเมื่องานจบ (Unload)
 function ESP:Destroy()
+    -- 1. ตัด Connection ทั้งหมดก่อน
     for _, conn in ipairs(Connections) do
-        conn:Disconnect()
+        pcall(function()
+            conn:Disconnect()
+        end)
     end
-    for player in pairs(ESPData) do
+    Connections = {}
+
+    -- 2. ดึงรายชื่อผู้เล่นทั้งหมดใส่ตารางชั่วคราว เพื่อความปลอดภัยในการวนลูปเคลียร์
+    local playersToClear = {}
+    for player, _ in pairs(ESPData) do
+        table.insert(playersToClear, player)
+    end
+
+    for _, player in ipairs(playersToClear) do
         removeESP(player)
     end
-    -- คืนค่า Lighting เดิม
-    Lighting.Brightness = OriginalLighting.Brightness
-    Lighting.GlobalShadows = OriginalLighting.GlobalShadows
-    Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
-    Lighting.FogEnd = OriginalLighting.FogEnd
-    Lighting.ClockTime = OriginalLighting.ClockTime
-    Lighting.Ambient = OriginalLighting.Ambient
+
+    -- 3. คืนค่าสภาพแวดล้อมแสงเดิม
+    pcall(function()
+        Lighting.Brightness = OriginalLighting.Brightness
+        Lighting.GlobalShadows = OriginalLighting.GlobalShadows
+        Lighting.OutdoorAmbient = OriginalLighting.OutdoorAmbient
+        Lighting.FogEnd = OriginalLighting.FogEnd
+        Lighting.ClockTime = OriginalLighting.ClockTime
+        Lighting.Ambient = OriginalLighting.Ambient
+    end)
 end
 
 ESP:Init()
