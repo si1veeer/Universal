@@ -30,11 +30,11 @@ ESP.Settings = {
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
     BoxType = "Corner", -- ตั้งค่าเริ่มต้นเป็นมุมฉาก
-    BoxColor = Color3.fromRGB(255, 0, 0),
+    BoxColor = Color3.fromRGB(255, 255, 255), -- ตั้งค่าเริ่มต้นเป็นสีขาวตามต้องการ
     HealthBar = true,
-    HealthBarSide = "Left", -- ตั้งค่าเริ่มต้นให้หลอดเลือดอยู่ฝั่งซ้าย
-    DynamicHealthColor = false, -- ปิดเปลี่ยนสีตามเลือด เพื่อให้เป็นสีเขียวคงที่
-    HealthBarColor = Color3.fromRGB(0, 255, 0), -- สีเขียว
+    HealthBarSide = "Left", -- หลอดเลือดอยู่ฝั่งซ้าย
+    DynamicHealthColor = false,
+    HealthBarColor = Color3.fromRGB(0, 255, 0), -- หลอดเลือดสีเขียว
     HealthText = false,
     Weapon = false,
     WeaponColor = Color3.fromRGB(255, 255, 255),
@@ -124,19 +124,6 @@ end
 
 local function addPlayer(player)
     if player == LocalPlayer then return end
-    
-    local skeletonJoints = {
-        {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
-        {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
-        {"UpperTorso", "RightUpperArm"}, {"RightUpperArm", "RightLowerArm"}, {"RightLowerArm", "RightHand"},
-        {"LowerTorso", "LeftUpperLeg"}, {"LeftUpperLeg", "LeftLowerLeg"}, {"LeftLowerLeg", "LeftFoot"},
-        {"LowerTorso", "RightUpperLeg"}, {"RightUpperLeg", "RightLowerLeg"}, {"RightLowerLeg", "RightFoot"}
-    }
-
-    local skeletonJointsR6 = {
-        {"Head", "Torso"}, {"Torso", "Left Arm"}, {"Torso", "Right Arm"},
-        {"Torso", "Left Leg"}, {"Torso", "Right Leg"}
-    }
 
     local pData = {
         BoxOutline = createDrawing("Square", {Color = Color3.fromRGB(0, 0, 0), Thickness = 3, Filled = false, Visible = false}),
@@ -252,6 +239,10 @@ local function addPlayer(player)
                 local outlineColor = Color3.fromRGB(0, 0, 0)
                 local boxColor = ESP.Settings.BoxColor
 
+                for i = 1, 16 do
+                    lines[i].Color = boxColor
+                end
+
                 lines[1].From = Vector2.new(boxX, boxY) lines[1].To = Vector2.new(boxX + lengthX, boxY) lines[1].Color = outlineColor lines[1].Thickness = 2.5
                 lines[2].From = Vector2.new(boxX, boxY) lines[2].To = Vector2.new(boxX + lengthX, boxY) lines[2].Color = boxColor lines[2].Thickness = 1.25
                 lines[3].From = Vector2.new(boxX, boxY) lines[3].To = Vector2.new(boxX, boxY + lengthY) lines[3].Color = outlineColor lines[3].Thickness = 2.5
@@ -354,11 +345,9 @@ function ESP:Destroy()
     end
     Connections = {}
 
-    (function()
-        local list = {}
-        for player in pairs(ESPData) do table.insert(list, player) end
-        for _, player in ipairs(list) do removeESP(player) end
-    end)()
+    local list = {}
+    for player in pairs(ESPData) do table.insert(list, player) end
+    for _, player in ipairs(list) do removeESP(player) end
 
     pcall(function()
         Lighting.Brightness = OriginalLighting.Brightness
