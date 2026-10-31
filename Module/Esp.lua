@@ -144,7 +144,7 @@ local function addPlayer(player)
     }
 
     for i = 1, 16 do
-        pData.CornerLines[i] = createDrawing("Line", {Color = ESP.Settings.BoxColor, Thickness = 2, Visible = false})
+        pData.CornerLines[i] = createDrawing("Line", {Color = ESP.Settings.BoxColor, Thickness = 1.25, Visible = false})
     end
 
     for i = 1, 14 do
@@ -201,7 +201,6 @@ local function addPlayer(player)
             return
         end
 
-        -- ใช้ GetBoundingBox เพื่อครอบคลุมทั้งตัวละคร (รวมหัว ผม หมวก และเท้า) แบบเรียลไทม์
         local cframe, size = character:GetBoundingBox()
         local topWorld = cframe.Position + Vector3.new(0, size.Y / 2, 0)
         local bottomWorld = cframe.Position - Vector3.new(0, size.Y / 2, 0)
@@ -245,25 +244,26 @@ local function addPlayer(player)
                     lines[i].Color = boxColor
                 end
 
-                lines[1].From = Vector2.new(boxX, boxY) lines[1].To = Vector2.new(boxX + lengthX, boxY) lines[1].Color = outlineColor lines[1].Thickness = 5
-                lines[2].From = Vector2.new(boxX, boxY) lines[2].To = Vector2.new(boxX + lengthX, boxY) lines[2].Color = boxColor lines[2].Thickness = 2
-                lines[3].From = Vector2.new(boxX, boxY) lines[3].To = Vector2.new(boxX, boxY + lengthY) lines[3].Color = outlineColor lines[3].Thickness = 5
-                lines[4].From = Vector2.new(boxX, boxY) lines[4].To = Vector2.new(boxX, boxY + lengthY) lines[4].Color = boxColor lines[4].Thickness = 2
+                -- ปรับความหนาให้พอดีและสมดุลกับ HP Bar (Outline = 3, Inner = 1.25)
+                lines[1].From = Vector2.new(boxX, boxY) lines[1].To = Vector2.new(boxX + lengthX, boxY) lines[1].Color = outlineColor lines[1].Thickness = 3
+                lines[2].From = Vector2.new(boxX, boxY) lines[2].To = Vector2.new(boxX + lengthX, boxY) lines[2].Color = boxColor lines[2].Thickness = 1.25
+                lines[3].From = Vector2.new(boxX, boxY) lines[3].To = Vector2.new(boxX, boxY + lengthY) lines[3].Color = outlineColor lines[3].Thickness = 3
+                lines[4].From = Vector2.new(boxX, boxY) lines[4].To = Vector2.new(boxX, boxY + lengthY) lines[4].Color = boxColor lines[4].Thickness = 1.25
 
-                lines[5].From = Vector2.new(boxX + boxWidth, boxY) lines[5].To = Vector2.new(boxX + boxWidth - lengthX, boxY) lines[5].Color = outlineColor lines[5].Thickness = 5
-                lines[6].From = Vector2.new(boxX + boxWidth, boxY) lines[6].To = Vector2.new(boxX + boxWidth - lengthX, boxY) lines[6].Color = boxColor lines[6].Thickness = 2
-                lines[7].From = Vector2.new(boxX + boxWidth, boxY) lines[7].To = Vector2.new(boxX + boxWidth, boxY + lengthY) lines[7].Color = outlineColor lines[7].Thickness = 5
-                lines[8].From = Vector2.new(boxX + boxWidth, boxY) lines[8].To = Vector2.new(boxX + boxWidth, boxY + lengthY) lines[8].Color = boxColor lines[8].Thickness = 2
+                lines[5].From = Vector2.new(boxX + boxWidth, boxY) lines[5].To = Vector2.new(boxX + boxWidth - lengthX, boxY) lines[5].Color = outlineColor lines[5].Thickness = 3
+                lines[6].From = Vector2.new(boxX + boxWidth, boxY) lines[6].To = Vector2.new(boxX + boxWidth - lengthX, boxY) lines[6].Color = boxColor lines[6].Thickness = 1.25
+                lines[7].From = Vector2.new(boxX + boxWidth, boxY) lines[7].To = Vector2.new(boxX + boxWidth, boxY + lengthY) lines[7].Color = outlineColor lines[7].Thickness = 3
+                lines[8].From = Vector2.new(boxX + boxWidth, boxY) lines[8].To = Vector2.new(boxX + boxWidth, boxY + lengthY) lines[8].Color = boxColor lines[8].Thickness = 1.25
 
-                lines[9].From = Vector2.new(boxX, boxY + boxHeight) lines[9].To = Vector2.new(boxX + lengthX, boxY + boxHeight) lines[9].Color = outlineColor lines[9].Thickness = 5
-                lines[10].From = Vector2.new(boxX, boxY + boxHeight) lines[10].To = Vector2.new(boxX + lengthX, boxY + boxHeight) lines[10].Color = boxColor lines[10].Thickness = 2
-                lines[11].From = Vector2.new(boxX, boxY + boxHeight) lines[11].To = Vector2.new(boxX, boxY + boxHeight - lengthY) lines[11].Color = outlineColor lines[11].Thickness = 5
-                lines[12].From = Vector2.new(boxX, boxY + boxHeight) lines[12].To = Vector2.new(boxX, boxY + boxHeight - lengthY) lines[12].Color = boxColor lines[12].Thickness = 2
+                lines[9].From = Vector2.new(boxX, boxY + boxHeight) lines[9].To = Vector2.new(boxX + lengthX, boxY + boxHeight) lines[9].Color = outlineColor lines[9].Thickness = 3
+                lines[10].From = Vector2.new(boxX, boxY + boxHeight) lines[10].To = Vector2.new(boxX + lengthX, boxY + boxHeight) lines[10].Color = boxColor lines[10].Thickness = 1.25
+                lines[11].From = Vector2.new(boxX, boxY + boxHeight) lines[11].To = Vector2.new(boxX, boxY + boxHeight - lengthY) lines[11].Color = outlineColor lines[11].Thickness = 3
+                lines[12].From = Vector2.new(boxX, boxY + boxHeight) lines[12].To = Vector2.new(boxX, boxY + boxHeight - lengthY) lines[12].Color = boxColor lines[12].Thickness = 1.25
 
-                lines[13].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[13].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[13].Color = outlineColor lines[13].Thickness = 5
-                lines[14].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[14].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[14].Color = boxColor lines[14].Thickness = 2
-                lines[15].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[15].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[15].Color = outlineColor lines[15].Thickness = 5
-                lines[16].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[16].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[16].Color = boxColor lines[16].Thickness = 2
+                lines[13].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[13].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[13].Color = outlineColor lines[13].Thickness = 3
+                lines[14].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[14].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[14].Color = boxColor lines[14].Thickness = 1.25
+                lines[15].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[15].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[15].Color = outlineColor lines[15].Thickness = 3
+                lines[16].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[16].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[16].Color = boxColor lines[16].Thickness = 1.25
 
                 for i = 1, 16 do lines[i].Visible = true end
             end
@@ -334,10 +334,10 @@ function ESP:Init()
 end
 
 function ESP:UpdateSettings(newSettings)
-    for key, val in pairs(newDetails or newSettings) do
-        for k, v in pairs(newSettings) do
+    for _, v in pairs(newSettings) do
+        for k, val in pairs(newSettings) do
             if ESP.Settings[k] ~= nil then
-                ESP.Settings[k] = v
+                ESP.Settings[k] = val
             end
         end
         break
