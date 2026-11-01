@@ -12,6 +12,7 @@ end
 local ESP = {}
 ESP.__index = ESP
 
+-- ค่าเริ่มต้นมาตรฐาน (Default Settings)
 ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
@@ -23,11 +24,17 @@ ESP.Settings = {
     BoxColor = Color3.fromRGB(255, 255, 255),
     HealthBar = true,
     HealthBarSide = "Left",
-    DynamicHealthColor = true,
+    DynamicHealthColor = false,
     HealthBarColor = Color3.fromRGB(0, 255, 0),
     Distance = true,
     DistanceColor = Color3.fromRGB(255, 255, 255),
-    Thickness = 1.25
+    Thickness = 1.25,
+    -- เพิ่ม Setting ใหม่ๆ รองรับการเปิด/ปิด
+    Tracers = false,
+    TracerColor = Color3.fromRGB(255, 255, 255),
+    Skeleton = false,
+    SkeletonColor = Color3.fromRGB(255, 255, 255),
+    TeamCheck = false
 }
 
 local ESPData = {}
@@ -54,6 +61,10 @@ local function removeESP(player)
             if ESPData[player].HealthBarOutline then ESPData[player].HealthBarOutline:Remove() end
             if ESPData[player].NameTag then ESPData[player].NameTag:Remove() end
             if ESPData[player].DistanceTag then ESPData[player].DistanceTag:Remove() end
+            if ESPData[player].Tracer then ESPData[player].Tracer:Remove() end
+            if ESPData[player].SkeletonLines then
+                for _, line in pairs(ESPData[player].SkeletonLines) do line:Remove() end
+            end
         end)
         ESPData[player] = nil
     end
@@ -70,10 +81,16 @@ local function addPlayer(player)
         HealthBar = createDrawing("Square", {Color = Color3.fromRGB(0, 255, 0), Thickness = 1, Filled = true, Visible = false}),
         NameTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 14, Center = true, Outline = true, Visible = false}),
         DistanceTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 14, Center = true, Outline = true, Visible = false}),
+        Tracer = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Visible = false}),
+        SkeletonLines = {}
     }
 
     for i = 1, 16 do
         pData.CornerLines[i] = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1.25, Visible = false})
+    end
+
+    for i = 1, 10 do
+        pData.SkeletonLines[i] = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Visible = false})
     end
 
     ESPData[player] = pData
@@ -86,6 +103,8 @@ local function addPlayer(player)
         pData.HealthBarOutline.Visible = false
         pData.NameTag.Visible = false
         pData.DistanceTag.Visible = false
+        pData.Tracer.Visible = false
+        for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
     end
 
     pData.Connection = RunService.RenderStepped:Connect(function()
@@ -94,6 +113,11 @@ local function addPlayer(player)
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
 
         if not ESP.Settings.Enabled or not character or not rootPart or not humanoid or humanoid.Health <= 0 then
+            hideAll()
+            return
+        end
+
+        if ESP.Settings.TeamCheck and player.Team == LocalPlayer.Team and LocalPlayer.Team ~= nil then
             hideAll()
             return
         end
@@ -212,6 +236,15 @@ local function addPlayer(player)
         else
             pData.DistanceTag.Visible = false
         end
+
+        if ESP.Settings.Tracers then
+            pData.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+            pData.Tracer.To = Vector2.new(rootPos.X, rootPos.Y)
+            pData.Tracer.Color = ESP.Settings.TracerColor
+            pData.Tracer.Visible = true
+        else
+            pData.Tracer.Visible = false
+        end
     end)
 
     player.AncestryChanged:Connect(function(_, parent)
@@ -234,8 +267,8 @@ function ESP:Init()
 end
 
 function ESP:UpdateSettings(newSettings)
-    for k, val in pairs(newSettings) do
-        if ESP.Settings[k] ~= nil then
+    if type(newSettings) == "table" then
+        for k, val in pairs(newSettings) do
             ESP.Settings[k] = val
         end
     end
