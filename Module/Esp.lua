@@ -13,7 +13,7 @@ local ESP = {}
 ESP.__index = ESP
 
 -- ==========================================
--- 1. Configuration & Settings Table (ตารางตั้งค่าส่วนกลาง)
+-- 1. Configuration & Settings Table
 -- ==========================================
 ESP.Settings = {
     Enabled = true,
@@ -42,15 +42,19 @@ ESP.Settings = {
     InvisibleColor = Color3.fromRGB(255, 0, 0),
     Weapon = false,
     WeaponColor = Color3.fromRGB(255, 255, 255),
-    
-    -- ฟังก์ชันเสริมระดับโปร
     OffScreenArrows = false,
     OffScreenArrowColor = Color3.fromRGB(255, 255, 255),
     OffScreenArrowRadius = 150,
     GazeLine = false,
     GazeLineColor = Color3.fromRGB(255, 255, 255),
     GazeLineLength = 5,
-    FadeDistance = false
+    FadeDistance = false,
+    
+    -- ระบบ Chams / Highlight ใหม่
+    Highlight = false,
+    HighlightFillColor = Color3.fromRGB(255, 0, 0),
+    HighlightOutlineColor = Color3.fromRGB(255, 255, 255),
+    HighlightFillTransparency = 0.5
 }
 
 local ESPData = {}
@@ -65,13 +69,14 @@ local function createDrawing(class, properties)
 end
 
 -- ==========================================
--- 2. Lifecycle Management & Player Tracking (ระบบจัดการผู้เล่นและตัวละคร)
+-- 2. Lifecycle Management & Player Tracking
 -- ==========================================
 local function removeESP(player)
     if ESPData[player] then
         pcall(function()
             if ESPData[player].Connection then ESPData[player].Connection:Disconnect() end
             if ESPData[player].CharAddedConn then ESPData[player].CharAddedConn:Disconnect() end
+            if ESPData[player].Highlight then ESPData[player].Highlight:Destroy() end
             if ESPData[player].Box then ESPData[player].Box:Remove() end
             if ESPData[player].BoxOutline then ESPData[player].BoxOutline:Remove() end
             if ESPData[player].CornerLines then
@@ -111,6 +116,17 @@ local function addPlayer(player)
         SkeletonLines = {}
     }
 
+    -- สร้าง Roblox Highlight object สำหรับทำ Chams เรืองแสงทะลุกำแพง
+    local highlight = Instance.new("Highlight")
+    highlight.Enabled = false
+    highlight.Adornee = nil
+    highlight.FillColor = ESP.Settings.HighlightFillColor
+    highlight.OutlineColor = ESP.Settings.HighlightOutlineColor
+    highlight.FillTransparency = ESP.Settings.HighlightFillTransparency
+    highlight.OutlineTransparency = 0
+    pcall(function() highlight.Parent = CoreGui end)
+    pData.Highlight = highlight
+
     for i = 1, 16 do
         pData.CornerLines[i] = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1.25, Visible = false})
     end
@@ -133,10 +149,12 @@ local function addPlayer(player)
         pData.Tracer.Visible = false
         pData.OffScreenArrow.Visible = false
         pData.GazeLine.Visible = false
+        highlight.Enabled = false
+        highlight.Adornee = nil
         for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
     end
 
-    -- Core Render Loop (เรนเดอร์เรียลไทม์ทุกเฟรม รองรับ CharacterAdded อัตโนมัติ)
+    -- Core Render Loop
     pData.Connection = RunService.RenderStepped:Connect(function()
         local character = player.Character
         local rootPart = character and character:FindFirstChild("HumanoidRootPart")
@@ -152,6 +170,18 @@ local function addPlayer(player)
             return
         end
 
+        -- จัดการระบบ Highlight (Chams)
+        if ESP.Settings.Highlight then
+            highlight.Adornee = character
+            highlight.FillColor = ESP.Settings.HighlightFillColor
+            highlight.OutlineColor = ESP.Settings.HighlightOutlineColor
+            highlight.FillTransparency = ESP.Settings.HighlightFillTransparency
+            highlight.Enabled = true
+        else
+            highlight.Enabled = false
+            highlight.Adornee = nil
+        end
+
         local distance = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (LocalPlayer.Character.HumanoidRootPart.Position - rootPart.Position).Magnitude or 0
         if distance > ESP.Settings.MaxDistance then
             hideAll()
@@ -163,6 +193,12 @@ local function addPlayer(player)
         if not onScreen then
             if ESP.Settings.OffScreenArrows then
                 hideAll()
+                -- รักษาค่า Highlight ไว้ถ้าเปิดใช้งาน แม้อยู่นอกจอ
+                if ESP.Settings.Highlight then
+                    highlight.Enabled = true
+                    highlight.Adornee = character
+                end
+                
                 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
                 local camCFrame = Camera.CFrame
                 local relPos = camCFrame:PointToObjectSpace(rootPart.Position)
@@ -385,7 +421,6 @@ local function addPlayer(player)
         end
     end)
 
-    -- ดักจับเหตุการณ์รีเซ็ตตัวละครผ่าน CharacterAdded เสริมความเสถียร
     pData.CharAddedConn = player.CharacterAdded:Connect(function(newChar)
         hideAll()
     end)
@@ -396,7 +431,7 @@ local function addPlayer(player)
 end
 
 -- ==========================================
--- 3. Cleanup & Garbage Collection (Destroy Function)
+-- 3. Cleanup & Garbage Collection
 -- ==========================================
 function ESP:Destroy()
     for _, conn in ipairs(Connections) do
@@ -412,7 +447,7 @@ function ESP:Destroy()
 end
 
 -- ==========================================
--- 4. Public API Methods (ช่องทางติดต่อสื่อสารกับภายนอก)
+-- 4. Public API Methods
 -- ==========================================
 function ESP:Init()
     for _, player in ipairs(Players:GetPlayers()) do
@@ -421,7 +456,6 @@ function ESP:Init()
     table.insert(Connections, Players.PlayerAdded:Connect(addPlayer))
     table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
 
-    -- ปุ่มลัดปิดสคริปต์ฉุกเฉิน (กดปุ่ม Keypad 1)
     table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed and input.KeyCode == Enum.KeyCode.KeypadOne then
             pcall(function() ESP:Destroy() end)
@@ -437,7 +471,6 @@ function ESP:UpdateSettings(newSettings)
     end
 end
 
--- เริ่มต้นการทำงานของโมดูล
 ESP:Init()
 getgenv().ESP = ESP
 return ESP
