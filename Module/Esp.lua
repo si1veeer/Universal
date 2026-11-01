@@ -16,7 +16,7 @@ ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
     TextSize = 14,
-    DistanceSize = 12,                       -- ขนาดตัวหนังสือระยะทาง (ปรับให้เล็กลง)
+    DistanceSize = 12,
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
@@ -114,7 +114,14 @@ local function addPlayer(player)
         for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
     end
 
-    pData.Connection = RunService.RenderStepped:Connect(function()
+    local lastUpdate = 0
+    local updateInterval = 1 / 60 -- จำกัดความถี่คำนวณที่ 60 FPS เพื่อป้องกันอาการกระตุกเวลากด Tab
+
+    pData.Connection = RunService.RenderStepped:Connect(function(deltaTime)
+        lastUpdate = lastUpdate + deltaTime
+        if lastUpdate < updateInterval then return end
+        lastUpdate = 0
+
         local character = player.Character
         local rootPart = character and character:FindFirstChild("HumanoidRootPart")
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -125,6 +132,13 @@ local function addPlayer(player)
         end
 
         if ESP.Settings.TeamCheck and player.Team == LocalPlayer.Team and LocalPlayer.Team ~= nil then
+            hideAll()
+            return
+        end
+
+        -- เช็คตำแหน่งบนจอก่อนเพื่อตัดการคำนวณที่ไม่จำเป็นทันที
+        local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+        if not onScreen then
             hideAll()
             return
         end
@@ -157,12 +171,6 @@ local function addPlayer(player)
         
         local topPos = Camera:WorldToViewportPoint(topWorld)
         local bottomPos = Camera:WorldToViewportPoint(bottomWorld)
-        local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-
-        if not onScreen then
-            hideAll()
-            return
-        end
 
         local boxHeight = math.abs(topPos.Y - bottomPos.Y)
         local boxWidth = boxHeight / 2.0 
@@ -249,7 +257,6 @@ local function addPlayer(player)
             pData.NameTag.Visible = false
         end
 
-        -- ปรับแก้ Distance (เอาวงเล็บออก และปรับขนาดตัวหนังสือเป็น 12)
         if ESP.Settings.Distance then
             pData.DistanceTag.Text = math.floor(distance) .. "m"
             pData.DistanceTag.Size = ESP.Settings.DistanceSize or 12
