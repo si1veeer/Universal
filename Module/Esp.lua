@@ -40,13 +40,10 @@ ESP.Settings = {
     Weapon = false,
     WeaponColor = Color3.fromRGB(255, 255, 255),
     
-    -- ฟังก์ชันระดับโปรทั้ง 4 ที่เพิ่มเข้ามา
+    -- คงเหลือ OffScreenArrows, GazeLine, FadeDistance (เอา HeadDot ออกแล้ว)
     OffScreenArrows = false,
     OffScreenArrowColor = Color3.fromRGB(255, 255, 255),
     OffScreenArrowRadius = 150,
-    HeadDot = false,
-    HeadDotColor = Color3.fromRGB(255, 255, 255),
-    HeadDotRadius = 4,
     GazeLine = false,
     GazeLineColor = Color3.fromRGB(255, 255, 255),
     GazeLineLength = 5,
@@ -80,7 +77,6 @@ local function removeESP(player)
             if ESPData[player].WeaponTag then ESPData[player].WeaponTag:Remove() end
             if ESPData[player].Tracer then ESPData[player].Tracer:Remove() end
             if ESPData[player].OffScreenArrow then ESPData[player].OffScreenArrow:Remove() end
-            if ESPData[player].HeadDot then ESPData[player].HeadDot:Remove() end
             if ESPData[player].GazeLine then ESPData[player].GazeLine:Remove() end
             if ESPData[player].SkeletonLines then
                 for _, line in pairs(ESPData[player].SkeletonLines) do line:Remove() end
@@ -104,7 +100,6 @@ local function addPlayer(player)
         WeaponTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 14, Center = true, Outline = true, Visible = false}),
         Tracer = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Visible = false}),
         OffScreenArrow = createDrawing("Triangle", {Color = Color3.fromRGB(255, 255, 255), Filled = true, Visible = false}),
-        HeadDot = createDrawing("Circle", {Color = Color3.fromRGB(255, 255, 255), Filled = true, Radius = 4, Visible = false}),
         GazeLine = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Visible = false}),
         SkeletonLines = {}
     }
@@ -130,7 +125,6 @@ local function addPlayer(player)
         pData.WeaponTag.Visible = false
         pData.Tracer.Visible = false
         pData.OffScreenArrow.Visible = false
-        pData.HeadDot.Visible = false
         pData.GazeLine.Visible = false
         for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
     end
@@ -163,7 +157,6 @@ local function addPlayer(player)
             return
         end
 
-        -- คำนวณระบบ Fade ตามระยะทาง (Distance Alpha)
         local alpha = 1
         if ESP.Settings.FadeDistance then
             alpha = math.clamp(1 - (distance / ESP.Settings.MaxDistance), 0.2, 1)
@@ -171,23 +164,25 @@ local function addPlayer(player)
 
         local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
 
-        -- จัดการกรณีตัวละครอยู่นอกจอ (Off-Screen Arrows)
+        -- ระบบ OffScreenArrows ที่แก้ไขใหม่ให้คำนวณทิศทางตรงกับตัวละครเป๊ะๆ
         if not onScreen then
             if ESP.Settings.OffScreenArrows then
                 hideAll()
-                local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                local camSpace = Camera.CFrame:PointToObjectSpace(rootPart.Position)
-                if camSpace.Z < 0 then
-                    camSpace = Vector3.new(-camSpace.X, -camSpace.Y, 0)
-                end
-                local angle = math.atan2(camSpace.X, -camSpace.Y)
-                local radius = ESP.Settings.OffScreenArrowRadius
-                local arrowPos = center + Vector2.new(math.sin(angle), -math.cos(angle)) * radius
+                local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                local _, inViewport = Camera:WorldToViewportPoint(rootPart.Position)
                 
-                local size = 10
+                -- แปลงพิกัด World เป็นทิศทางบนหน้าจอ
+                local camCFrame = Camera.CFrame
+                local relPos = camCFrame:PointToObjectSpace(rootPart.Position)
+                local angle = math.atan2(relPos.X, -relPos.Y)
+                
+                local radius = ESP.Settings.OffScreenArrowRadius
+                local arrowPos = screenCenter + Vector2.new(math.sin(angle), -math.cos(angle)) * radius
+                
+                local size = 12
                 local tip = arrowPos + Vector2.new(math.sin(angle), -math.cos(angle)) * size
-                local left = arrowPos + Vector2.new(math.sin(angle + 2.5), -math.cos(angle + 2.5)) * (size * 0.7)
-                local right = arrowPos + Vector2.new(math.sin(angle - 2.5), -math.cos(angle - 2.5)) * (size * 0.7)
+                local left = arrowPos + Vector2.new(math.sin(angle + 2.4), -math.cos(angle + 2.4)) * (size * 0.7)
+                local right = arrowPos + Vector2.new(math.sin(angle - 2.4), -math.cos(angle - 2.4)) * (size * 0.7)
                 
                 pData.OffScreenArrow.PointA = tip
                 pData.OffScreenArrow.PointB = left
@@ -271,7 +266,6 @@ local function addPlayer(player)
 
                 lines[13].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[13].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[13].Color = outlineColor lines[13].Thickness = 3
                 lines[14].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[14].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[14].Color = activeBoxColor lines[14].Thickness = 1.25
-                lines[15].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[15].To = Vector2.new(boxX + boxWidth, boxY + boxHeight, boxY + boxHeight - lengthY) -- fix line
                 lines[15].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[15].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[15].Color = outlineColor lines[15].Thickness = 3
                 lines[16].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[16].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[16].Color = activeBoxColor lines[16].Thickness = 1.25
 
@@ -337,27 +331,6 @@ local function addPlayer(player)
             pData.WeaponTag.Visible = false
         end
 
-        -- ระบบ Head Dot (จุดเล็งหัว)
-        if ESP.Settings.HeadDot then
-            local head = character:FindFirstChild("Head")
-            if head then
-                local headPos, headOnScreen = Camera:WorldToViewportPoint(head.Position)
-                if headOnScreen then
-                    pData.HeadDot.Position = Vector2.new(headPos.X, headPos.Y)
-                    pData.HeadDot.Radius = ESP.Settings.HeadDotRadius
-                    pData.HeadDot.Color = ESP.Settings.HeadDotColor
-                    pData.HeadDot.Visible = true
-                else
-                    pData.HeadDot.Visible = false
-                end
-            else
-                pData.HeadDot.Visible = false
-            end
-        else
-            pData.HeadDot.Visible = false
-        end
-
-        -- ระบบ Gaze Line (เส้นทิศทางมอง)
         if ESP.Settings.GazeLine then
             local head = character:FindFirstChild("Head")
             if head then
