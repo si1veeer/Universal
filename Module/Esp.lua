@@ -19,7 +19,7 @@ ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
     TextSize = 14,
-    DistanceSize = 12,                       -- ขนาดตัวหนังสือระยะทาง (ไม่มีวงเงิน และขนาดเล็กลง)
+    DistanceSize = 12,
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
@@ -65,12 +65,13 @@ local function createDrawing(class, properties)
 end
 
 -- ==========================================
--- 2. Lifecycle Management & Player Tracking (ระบบจัดการผู้เล่นเข้า-ออก)
+-- 2. Lifecycle Management & Player Tracking (ระบบจัดการผู้เล่นและตัวละคร)
 -- ==========================================
 local function removeESP(player)
     if ESPData[player] then
         pcall(function()
             if ESPData[player].Connection then ESPData[player].Connection:Disconnect() end
+            if ESPData[player].CharAddedConn then ESPData[player].CharAddedConn:Disconnect() end
             if ESPData[player].Box then ESPData[player].Box:Remove() end
             if ESPData[player].BoxOutline then ESPData[player].BoxOutline:Remove() end
             if ESPData[player].CornerLines then
@@ -135,7 +136,7 @@ local function addPlayer(player)
         for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
     end
 
-    -- Core Render Loop (เรนเดอร์เรียลไทม์ทุกเฟรมเพื่อให้ลื่นไหลสูงสุด)
+    -- Core Render Loop (เรนเดอร์เรียลไทม์ทุกเฟรม รองรับ CharacterAdded อัตโนมัติ)
     pData.Connection = RunService.RenderStepped:Connect(function()
         local character = player.Character
         local rootPart = character and character:FindFirstChild("HumanoidRootPart")
@@ -382,6 +383,11 @@ local function addPlayer(player)
         else
             for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
         end
+    end)
+
+    -- ดักจับเหตุการณ์รีเซ็ตตัวละครผ่าน CharacterAdded เสริมความเสถียร
+    pData.CharAddedConn = player.CharacterAdded:Connect(function(newChar)
+        hideAll()
     end)
 
     player.AncestryChanged:Connect(function(_, parent)
