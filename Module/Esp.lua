@@ -39,8 +39,6 @@ ESP.Settings = {
     InvisibleColor = Color3.fromRGB(255, 0, 0),
     Weapon = false,
     WeaponColor = Color3.fromRGB(255, 255, 255),
-    
-    -- คงเหลือ OffScreenArrows, GazeLine, FadeDistance (เอา HeadDot ออกแล้ว)
     OffScreenArrows = false,
     OffScreenArrowColor = Color3.fromRGB(255, 255, 255),
     OffScreenArrowRadius = 150,
@@ -129,14 +127,8 @@ local function addPlayer(player)
         for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
     end
 
-    local lastUpdate = 0
-    local updateInterval = 1 / 60
-
-    pData.Connection = RunService.RenderStepped:Connect(function(deltaTime)
-        lastUpdate = lastUpdate + deltaTime
-        if lastUpdate < updateInterval then return end
-        lastUpdate = 0
-
+    -- เรนเดอร์ทุกเฟรมแบบ Real-time เพื่อความลื่นไหลสูงสุด
+    pData.Connection = RunService.RenderStepped:Connect(function()
         local character = player.Character
         local rootPart = character and character:FindFirstChild("HumanoidRootPart")
         local humanoid = character and character:FindFirstChildOfClass("Humanoid")
@@ -157,21 +149,12 @@ local function addPlayer(player)
             return
         end
 
-        local alpha = 1
-        if ESP.Settings.FadeDistance then
-            alpha = math.clamp(1 - (distance / ESP.Settings.MaxDistance), 0.2, 1)
-        end
-
         local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
 
-        -- ระบบ OffScreenArrows ที่แก้ไขใหม่ให้คำนวณทิศทางตรงกับตัวละครเป๊ะๆ
         if not onScreen then
             if ESP.Settings.OffScreenArrows then
                 hideAll()
                 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-                local _, inViewport = Camera:WorldToViewportPoint(rootPart.Position)
-                
-                -- แปลงพิกัด World เป็นทิศทางบนหน้าจอ
                 local camCFrame = Camera.CFrame
                 local relPos = camCFrame:PointToObjectSpace(rootPart.Position)
                 local angle = math.atan2(relPos.X, -relPos.Y)
@@ -355,6 +338,7 @@ local function addPlayer(player)
             pData.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
             pData.Tracer.To = Vector2.new(rootPos.X, rootPos.Y)
             pData.Tracer.Color = ESP.Settings.TracerColor
+            pData.Tracers = true -- keep flag
             pData.Tracer.Visible = true
         else
             pData.Tracer.Visible = false
