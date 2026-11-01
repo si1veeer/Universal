@@ -12,11 +12,11 @@ end
 local ESP = {}
 ESP.__index = ESP
 
--- ค่าเริ่มต้นมาตรฐาน (เพิ่ม Settings สำหรับ Skeleton, VisCheck, Weapon)
 ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
     TextSize = 14,
+    DistanceSize = 12,                       -- ขนาดตัวหนังสือระยะทาง (ปรับให้เล็กลง)
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
@@ -32,12 +32,11 @@ ESP.Settings = {
     Tracers = false,
     TracerColor = Color3.fromRGB(255, 255, 255),
     TeamCheck = false,
-    -- ฟังก์ชันใหม่ที่เพิ่มเข้ามา
     Skeleton = false,
     SkeletonColor = Color3.fromRGB(255, 255, 255),
     VisCheck = false,
-    VisibleColor = Color3.fromRGB(0, 255, 0),   -- สีเมื่อมองเห็น (ไม่มีอะไรบัง)
-    InvisibleColor = Color3.fromRGB(255, 0, 0), -- สีเมื่อถูกบังหลังกำแพง
+    VisibleColor = Color3.fromRGB(0, 255, 0),
+    InvisibleColor = Color3.fromRGB(255, 0, 0),
     Weapon = false,
     WeaponColor = Color3.fromRGB(255, 255, 255)
 }
@@ -86,7 +85,7 @@ local function addPlayer(player)
         HealthBarOutline = createDrawing("Square", {Color = Color3.fromRGB(0, 0, 0), Thickness = 1, Filled = true, Visible = false}),
         HealthBar = createDrawing("Square", {Color = Color3.fromRGB(0, 255, 0), Thickness = 1, Filled = true, Visible = false}),
         NameTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 14, Center = true, Outline = true, Visible = false}),
-        DistanceTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 14, Center = true, Outline = true, Visible = false}),
+        DistanceTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 12, Center = true, Outline = true, Visible = false}),
         WeaponTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 14, Center = true, Outline = true, Visible = false}),
         Tracer = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Visible = false}),
         SkeletonLines = {}
@@ -96,7 +95,6 @@ local function addPlayer(player)
         pData.CornerLines[i] = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1.25, Visible = false})
     end
 
-    -- โครงกระดูก R15 (14 เส้นเชื่อมต่อข้อต่อ)
     for i = 1, 14 do
         pData.SkeletonLines[i] = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Visible = false})
     end
@@ -137,7 +135,6 @@ local function addPlayer(player)
             return
         end
 
-        -- ระบบเช็คการมองเห็น (VisCheck)
         local isVisible = true
         if ESP.Settings.VisCheck then
             local head = character:FindFirstChild("Head")
@@ -252,9 +249,10 @@ local function addPlayer(player)
             pData.NameTag.Visible = false
         end
 
+        -- ปรับแก้ Distance (เอาวงเล็บออก และปรับขนาดตัวหนังสือเป็น 12)
         if ESP.Settings.Distance then
-            pData.DistanceTag.Text = "[" .. math.floor(distance) .. "m]"
-            pData.DistanceTag.Size = ESP.Settings.TextSize
+            pData.DistanceTag.Text = math.floor(distance) .. "m"
+            pData.DistanceTag.Size = ESP.Settings.DistanceSize or 12
             pData.DistanceTag.Position = Vector2.new(boxX + (boxWidth / 2), boxY + boxHeight + 2)
             pData.DistanceTag.Color = ESP.Settings.DistanceColor
             pData.DistanceTag.Visible = true
@@ -262,13 +260,12 @@ local function addPlayer(player)
             pData.DistanceTag.Visible = false
         end
 
-        -- ระบบแสดงชื่ออาวุธ (Weapon Tag)
         if ESP.Settings.Weapon then
             local tool = character:FindFirstChildOfClass("Tool")
             if tool then
                 pData.WeaponTag.Text = tool.Name
                 pData.WeaponTag.Size = ESP.Settings.TextSize
-                local offset = ESP.Settings.Distance and 18 or 2
+                local offset = ESP.Settings.Distance and 16 or 2
                 pData.WeaponTag.Position = Vector2.new(boxX + (boxWidth / 2), boxY + boxHeight + offset)
                 pData.WeaponTag.Color = ESP.Settings.WeaponColor
                 pData.WeaponTag.Visible = true
@@ -288,7 +285,6 @@ local function addPlayer(player)
             pData.Tracer.Visible = false
         end
 
-        -- ระบบโครงกระดูก (Skeleton)
         if ESP.Settings.Skeleton then
             local bones = {
                 {"Head", "UpperTorso"},
