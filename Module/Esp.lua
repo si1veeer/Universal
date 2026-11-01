@@ -12,11 +12,14 @@ end
 local ESP = {}
 ESP.__index = ESP
 
+-- ==========================================
+-- 1. Configuration & Settings Table (ตารางตั้งค่าส่วนกลาง)
+-- ==========================================
 ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
     TextSize = 14,
-    DistanceSize = 12,
+    DistanceSize = 12,                       -- ขนาดตัวหนังสือระยะทาง (ไม่มีวงเงิน และขนาดเล็กลง)
     Name = true,
     NameColor = Color3.fromRGB(255, 255, 255),
     Box = true,
@@ -39,6 +42,8 @@ ESP.Settings = {
     InvisibleColor = Color3.fromRGB(255, 0, 0),
     Weapon = false,
     WeaponColor = Color3.fromRGB(255, 255, 255),
+    
+    -- ฟังก์ชันเสริมระดับโปร
     OffScreenArrows = false,
     OffScreenArrowColor = Color3.fromRGB(255, 255, 255),
     OffScreenArrowRadius = 150,
@@ -59,6 +64,9 @@ local function createDrawing(class, properties)
     return draw
 end
 
+-- ==========================================
+-- 2. Lifecycle Management & Player Tracking (ระบบจัดการผู้เล่นเข้า-ออก)
+-- ==========================================
 local function removeESP(player)
     if ESPData[player] then
         pcall(function()
@@ -127,7 +135,7 @@ local function addPlayer(player)
         for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
     end
 
-    -- เรนเดอร์ทุกเฟรมแบบ Real-time เพื่อความลื่นไหลสูงสุด
+    -- Core Render Loop (เรนเดอร์เรียลไทม์ทุกเฟรมเพื่อให้ลื่นไหลสูงสุด)
     pData.Connection = RunService.RenderStepped:Connect(function()
         local character = player.Character
         local rootPart = character and character:FindFirstChild("HumanoidRootPart")
@@ -338,7 +346,6 @@ local function addPlayer(player)
             pData.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
             pData.Tracer.To = Vector2.new(rootPos.X, rootPos.Y)
             pData.Tracer.Color = ESP.Settings.TracerColor
-            pData.Tracers = true -- keep flag
             pData.Tracer.Visible = true
         else
             pData.Tracer.Visible = false
@@ -382,6 +389,25 @@ local function addPlayer(player)
     end)
 end
 
+-- ==========================================
+-- 3. Cleanup & Garbage Collection (Destroy Function)
+-- ==========================================
+function ESP:Destroy()
+    for _, conn in ipairs(Connections) do
+        pcall(function() conn:Disconnect() end)
+    end
+    Connections = {}
+    
+    for _, player in ipairs(Players:GetPlayers()) do
+        removeESP(player)
+    end
+    
+    getgenv().ESP = nil
+end
+
+-- ==========================================
+-- 4. Public API Methods (ช่องทางติดต่อสื่อสารกับภายนอก)
+-- ==========================================
 function ESP:Init()
     for _, player in ipairs(Players:GetPlayers()) do
         addPlayer(player)
@@ -389,6 +415,7 @@ function ESP:Init()
     table.insert(Connections, Players.PlayerAdded:Connect(addPlayer))
     table.insert(Connections, Players.PlayerRemoving:Connect(removeESP))
 
+    -- ปุ่มลัดปิดสคริปต์ฉุกเฉิน (กดปุ่ม Keypad 1)
     table.insert(Connections, UserInputService.InputBegan:Connect(function(input, gameProcessed)
         if not gameProcessed and input.KeyCode == Enum.KeyCode.KeypadOne then
             pcall(function() ESP:Destroy() end)
@@ -404,17 +431,7 @@ function ESP:UpdateSettings(newSettings)
     end
 end
 
-function ESP:Destroy()
-    for _, conn in ipairs(Connections) do
-        pcall(function() conn:Disconnect() end)
-    end
-    Connections = {}
-    for _, player in ipairs(Players:GetPlayers()) do
-        removeESP(player)
-    end
-    getgenv().ESP = nil
-end
-
+-- เริ่มต้นการทำงานของโมดูล
 ESP:Init()
 getgenv().ESP = ESP
 return ESP
