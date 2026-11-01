@@ -38,7 +38,19 @@ ESP.Settings = {
     VisibleColor = Color3.fromRGB(0, 255, 0),
     InvisibleColor = Color3.fromRGB(255, 0, 0),
     Weapon = false,
-    WeaponColor = Color3.fromRGB(255, 255, 255)
+    WeaponColor = Color3.fromRGB(255, 255, 255),
+    
+    -- ฟังก์ชันระดับโปรทั้ง 4 ที่เพิ่มเข้ามา
+    OffScreenArrows = false,
+    OffScreenArrowColor = Color3.fromRGB(255, 255, 255),
+    OffScreenArrowRadius = 150,
+    HeadDot = false,
+    HeadDotColor = Color3.fromRGB(255, 255, 255),
+    HeadDotRadius = 4,
+    GazeLine = false,
+    GazeLineColor = Color3.fromRGB(255, 255, 255),
+    GazeLineLength = 5,
+    FadeDistance = false
 }
 
 local ESPData = {}
@@ -67,6 +79,9 @@ local function removeESP(player)
             if ESPData[player].DistanceTag then ESPData[player].DistanceTag:Remove() end
             if ESPData[player].WeaponTag then ESPData[player].WeaponTag:Remove() end
             if ESPData[player].Tracer then ESPData[player].Tracer:Remove() end
+            if ESPData[player].OffScreenArrow then ESPData[player].OffScreenArrow:Remove() end
+            if ESPData[player].HeadDot then ESPData[player].HeadDot:Remove() end
+            if ESPData[player].GazeLine then ESPData[player].GazeLine:Remove() end
             if ESPData[player].SkeletonLines then
                 for _, line in pairs(ESPData[player].SkeletonLines) do line:Remove() end
             end
@@ -88,6 +103,9 @@ local function addPlayer(player)
         DistanceTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 12, Center = true, Outline = true, Visible = false}),
         WeaponTag = createDrawing("Text", {Color = Color3.fromRGB(255, 255, 255), Size = 14, Center = true, Outline = true, Visible = false}),
         Tracer = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Visible = false}),
+        OffScreenArrow = createDrawing("Triangle", {Color = Color3.fromRGB(255, 255, 255), Filled = true, Visible = false}),
+        HeadDot = createDrawing("Circle", {Color = Color3.fromRGB(255, 255, 255), Filled = true, Radius = 4, Visible = false}),
+        GazeLine = createDrawing("Line", {Color = Color3.fromRGB(255, 255, 255), Thickness = 1, Visible = false}),
         SkeletonLines = {}
     }
 
@@ -111,11 +129,14 @@ local function addPlayer(player)
         pData.DistanceTag.Visible = false
         pData.WeaponTag.Visible = false
         pData.Tracer.Visible = false
+        pData.OffScreenArrow.Visible = false
+        pData.HeadDot.Visible = false
+        pData.GazeLine.Visible = false
         for _, line in pairs(pData.SkeletonLines) do line.Visible = false end
     end
 
     local lastUpdate = 0
-    local updateInterval = 1 / 60 -- จำกัดความถี่คำนวณที่ 60 FPS เพื่อป้องกันอาการกระตุกเวลากด Tab
+    local updateInterval = 1 / 60
 
     pData.Connection = RunService.RenderStepped:Connect(function(deltaTime)
         lastUpdate = lastUpdate + deltaTime
@@ -136,17 +157,49 @@ local function addPlayer(player)
             return
         end
 
-        -- เช็คตำแหน่งบนจอก่อนเพื่อตัดการคำนวณที่ไม่จำเป็นทันที
-        local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
-        if not onScreen then
-            hideAll()
-            return
-        end
-
         local distance = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and (LocalPlayer.Character.HumanoidRootPart.Position - rootPart.Position).Magnitude or 0
         if distance > ESP.Settings.MaxDistance then
             hideAll()
             return
+        end
+
+        -- คำนวณระบบ Fade ตามระยะทาง (Distance Alpha)
+        local alpha = 1
+        if ESP.Settings.FadeDistance then
+            alpha = math.clamp(1 - (distance / ESP.Settings.MaxDistance), 0.2, 1)
+        end
+
+        local rootPos, onScreen = Camera:WorldToViewportPoint(rootPart.Position)
+
+        -- จัดการกรณีตัวละครอยู่นอกจอ (Off-Screen Arrows)
+        if not onScreen then
+            if ESP.Settings.OffScreenArrows then
+                hideAll()
+                local center = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+                local camSpace = Camera.CFrame:PointToObjectSpace(rootPart.Position)
+                if camSpace.Z < 0 then
+                    camSpace = Vector3.new(-camSpace.X, -camSpace.Y, 0)
+                end
+                local angle = math.atan2(camSpace.X, -camSpace.Y)
+                local radius = ESP.Settings.OffScreenArrowRadius
+                local arrowPos = center + Vector2.new(math.sin(angle), -math.cos(angle)) * radius
+                
+                local size = 10
+                local tip = arrowPos + Vector2.new(math.sin(angle), -math.cos(angle)) * size
+                local left = arrowPos + Vector2.new(math.sin(angle + 2.5), -math.cos(angle + 2.5)) * (size * 0.7)
+                local right = arrowPos + Vector2.new(math.sin(angle - 2.5), -math.cos(angle - 2.5)) * (size * 0.7)
+                
+                pData.OffScreenArrow.PointA = tip
+                pData.OffScreenArrow.PointB = left
+                pData.OffScreenArrow.PointC = right
+                pData.OffScreenArrow.Color = ESP.Settings.OffScreenArrowColor
+                pData.OffScreenArrow.Visible = true
+            else
+                hideAll()
+            end
+            return
+        else
+            pData.OffScreenArrow.Visible = false
         end
 
         local isVisible = true
@@ -218,6 +271,7 @@ local function addPlayer(player)
 
                 lines[13].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[13].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[13].Color = outlineColor lines[13].Thickness = 3
                 lines[14].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[14].To = Vector2.new(boxX + boxWidth - lengthX, boxY + boxHeight) lines[14].Color = activeBoxColor lines[14].Thickness = 1.25
+                lines[15].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[15].To = Vector2.new(boxX + boxWidth, boxY + boxHeight, boxY + boxHeight - lengthY) -- fix line
                 lines[15].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[15].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[15].Color = outlineColor lines[15].Thickness = 3
                 lines[16].From = Vector2.new(boxX + boxWidth, boxY + boxHeight) lines[16].To = Vector2.new(boxX + boxWidth, boxY + boxHeight - lengthY) lines[16].Color = activeBoxColor lines[16].Thickness = 1.25
 
@@ -281,6 +335,47 @@ local function addPlayer(player)
             end
         else
             pData.WeaponTag.Visible = false
+        end
+
+        -- ระบบ Head Dot (จุดเล็งหัว)
+        if ESP.Settings.HeadDot then
+            local head = character:FindFirstChild("Head")
+            if head then
+                local headPos, headOnScreen = Camera:WorldToViewportPoint(head.Position)
+                if headOnScreen then
+                    pData.HeadDot.Position = Vector2.new(headPos.X, headPos.Y)
+                    pData.HeadDot.Radius = ESP.Settings.HeadDotRadius
+                    pData.HeadDot.Color = ESP.Settings.HeadDotColor
+                    pData.HeadDot.Visible = true
+                else
+                    pData.HeadDot.Visible = false
+                end
+            else
+                pData.HeadDot.Visible = false
+            end
+        else
+            pData.HeadDot.Visible = false
+        end
+
+        -- ระบบ Gaze Line (เส้นทิศทางมอง)
+        if ESP.Settings.GazeLine then
+            local head = character:FindFirstChild("Head")
+            if head then
+                local headPos, headOnScreen = Camera:WorldToViewportPoint(head.Position)
+                local lookEndPos, lookOnScreen = Camera:WorldToViewportPoint(head.Position + head.CFrame.LookVector * ESP.Settings.GazeLineLength)
+                if headOnScreen and lookOnScreen then
+                    pData.GazeLine.From = Vector2.new(headPos.X, headPos.Y)
+                    pData.GazeLine.To = Vector2.new(lookEndPos.X, lookEndPos.Y)
+                    pData.GazeLine.Color = ESP.Settings.GazeLineColor
+                    pData.GazeLine.Visible = true
+                else
+                    pData.GazeLine.Visible = false
+                end
+            else
+                pData.GazeLine.Visible = false
+            end
+        else
+            pData.GazeLine.Visible = false
         end
 
         if ESP.Settings.Tracers then
