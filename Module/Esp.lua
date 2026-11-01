@@ -12,7 +12,7 @@ end
 local ESP = {}
 ESP.__index = ESP
 
--- ค่าเริ่มต้นมาตรฐาน (Default Settings)
+-- ค่าเริ่มต้นมาตรฐาน (ตั้งค่า DynamicHealthColor เป็น true ตั้งแต่ต้น)
 ESP.Settings = {
     Enabled = true,
     MaxDistance = 1000,
@@ -24,12 +24,11 @@ ESP.Settings = {
     BoxColor = Color3.fromRGB(255, 255, 255),
     HealthBar = true,
     HealthBarSide = "Left",
-    DynamicHealthColor = false,
+    DynamicHealthColor = true,               -- เปิดใช้งานเปลี่ยนสีตามเลือดอัตโนมัติ
     HealthBarColor = Color3.fromRGB(0, 255, 0),
     Distance = true,
     DistanceColor = Color3.fromRGB(255, 255, 255),
     Thickness = 1.25,
-    -- เพิ่ม Setting ใหม่ๆ รองรับการเปิด/ปิด
     Tracers = false,
     TracerColor = Color3.fromRGB(255, 255, 255),
     Skeleton = false,
